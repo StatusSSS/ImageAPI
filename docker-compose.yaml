@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: image_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: message_broker
+    restart: always
+    environment:
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    container_name: celery_app
+    restart: always
+    depends_on:
+      - rabbitmq
+      - db
+      - redis
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/app/uploads
+      - ./processed:/app/app/processed
+
+
+  api:
+    build: .
+    container_name: fastapi
+    restart: always
+    depends_on:
+      - db
+      - rabbitmq
+      - redis
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/app/uploads
+      - ./processed:/app/app/processed
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+
+  processor:
+    build:
+      context: .
+      dockerfile: Dockerfile.processor
+    container_name: image_processor
+    restart: always
+    depends_on:
+      - rabbitmq
+      - db
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/app/uploads
+      - ./processed:/app/app/processed
+
+volumes:
+  pg_data:
+  redis_data:

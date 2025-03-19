@@ -1,0 +1,29 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+.env
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# Logs & Debug files
+*.log
+*.sqlite3
+
+# Docker
+*.db
+*.pid
+/tmp/
+docker-compose.override.yml
+
+# VS Code & PyCharm
+.vscode/
+.idea/
+
+# Git
+*.swp
+.DS_Store
